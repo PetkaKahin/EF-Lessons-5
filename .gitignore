@@ -1,0 +1,26 @@
+# Composer dependencies
+/vendor/
+
+# Local application configuration and environment
+/config.php
+/.env
+/.env.*
+!/.env.example
+
+# Editors and local tooling
+/.idea/
+/.vscode/
+/.agents/
+/.codex/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Logs, caches, and test output
+*.log
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+/.phpstan.cache/
+/coverage/
