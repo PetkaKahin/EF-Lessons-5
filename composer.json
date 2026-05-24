@@ -1,0 +1,22 @@
+{
+    "name": "ef/lesson-3",
+    "description": "EF lesson 3 project",
+    "license": "proprietary",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "symfony/http-foundation": "^8.0",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*"
+    },
+    "autoload": {
+        "files": [
+            "Infrastructure/Helper/debug.php"
+        ],
+        "psr-4": {
+            "Application\\": "Application/",
+            "Domain\\": "Domain/",
+            "Infrastructure\\": "Infrastructure/"
+        }
+    }
+}
