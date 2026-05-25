@@ -11,6 +11,15 @@ $container = (new ContainerFactory())->create();
 
 /** @var MigrationRunner $runner */
 $runner = $container->get(MigrationRunner::class);
-$runner->run();
+$appliedMigrations = $runner->run();
 
-echo "done" . PHP_EOL;
+if ($appliedMigrations === []) {
+    echo "No pending migrations." . PHP_EOL;
+    exit(0);
+}
+
+foreach ($appliedMigrations as $migration) {
+    echo "Applied migration: $migration" . PHP_EOL;
+}
+
+echo sprintf("Applied %d migration(s).", count($appliedMigrations)) . PHP_EOL;

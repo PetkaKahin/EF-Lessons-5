@@ -6,6 +6,7 @@ namespace Infrastructure\DataBase;
 
 use Infrastructure\Config\Globals;
 use PDO;
+use RuntimeException;
 use Throwable;
 
 class MigrationRunner
@@ -15,27 +16,41 @@ class MigrationRunner
     ) {
     }
 
-    public function run(): void
+    /**
+     * @return list<string> Names of migrations successfully applied during this run.
+     */
+    public function run(): array
     {
         $files = glob(Globals::MIGRATIONS_PATH . '/*.sql') ?: [];
         sort($files);
 
         $this->pdo->exec('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY)');
 
+        $findMigration = $this->pdo->prepare('SELECT 1 FROM migrations WHERE name = :name');
+        $recordMigration = $this->pdo->prepare('INSERT INTO migrations (name) VALUES (:name)');
+        $applied = [];
+
         foreach ($files as $file) {
             $name = basename($file);
-            $quotedName = $this->pdo->quote($name);
+            $findMigration->execute(['name' => $name]);
 
-            if ($this->pdo->query("SELECT name FROM migrations WHERE name = $quotedName")->fetchColumn()) {
+            if ($findMigration->fetchColumn() !== false) {
                 continue;
             }
 
             $this->pdo->beginTransaction();
 
             try {
-                $this->pdo->exec((string) file_get_contents($file));
-                $this->pdo->exec("INSERT INTO migrations (name) VALUES ($quotedName)");
+                $sql = file_get_contents($file);
+
+                if ($sql === false) {
+                    throw new RuntimeException("Unable to read migration file: $name");
+                }
+
+                $this->pdo->exec($sql);
+                $recordMigration->execute(['name' => $name]);
                 $this->pdo->commit();
+                $applied[] = $name;
             } catch (Throwable $exception) {
                 if ($this->pdo->inTransaction()) {
                     $this->pdo->rollBack();
@@ -44,5 +59,7 @@ class MigrationRunner
                 throw $exception;
             }
         }
+
+        return $applied;
     }
 }
