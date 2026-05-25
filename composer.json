@@ -1,6 +1,6 @@
 {
-    "name": "ef/lesson-3",
-    "description": "EF lesson 3 project",
+    "name": "ef/lesson-5",
+    "description": "EF lesson 5 project",
     "license": "proprietary",
     "type": "project",
     "require": {
@@ -10,13 +10,11 @@
         "ext-pdo_pgsql": "*"
     },
     "autoload": {
-        "files": [
-            "Infrastructure/Helper/debug.php"
-        ],
         "psr-4": {
-            "Application\\": "Application/",
-            "Domain\\": "Domain/",
-            "Infrastructure\\": "Infrastructure/"
+            "bin\\": "bin/",
+            "migrations\\": "migrations/",
+            "queries\\": "queries/",
+            "seed\\": "seed/"
         }
     }
 }

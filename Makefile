@@ -1,6 +1,6 @@
-.PHONY: init up down shell dump-autoload check-config migrate
+.PHONY: init up down shell dump-autoload migrate seed
 
-init: check-config
+init:
 	docker compose build
 	docker compose run --rm php composer install
 	$(MAKE) migrate
@@ -17,8 +17,5 @@ shell:
 dump-autoload:
 	docker compose exec php composer dump-autoload
 
-check-config:
-	@test -f config.php || (echo "config.php not found."; echo "Create config.php from config.example.php and fill in the values."; exit 1)
-
-migrate: check-config
-	docker compose run --rm php php Infrastructure/Commands/migrate.php
+migrate:
+	docker compose run --rm php php bin/migrate.php
