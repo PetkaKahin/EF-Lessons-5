@@ -1,4 +1,4 @@
-.PHONY: init up down shell dump-autoload migrate seed
+.PHONY: init up down shell dump-autoload migrate seed seed-rollback
 
 init:
 	docker compose build
@@ -18,4 +18,10 @@ dump-autoload:
 	docker compose exec php composer dump-autoload
 
 migrate:
-	docker compose run --rm php php bin/migrate.php
+	docker compose exec php php bin/migrate.php
+
+seed:
+	docker compose exec php php seed/seed.php
+
+seed-rollback:
+	docker compose exec php php seed/rollback.php
