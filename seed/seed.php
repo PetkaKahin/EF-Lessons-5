@@ -6,7 +6,7 @@ const USERS_COUNT = 50_000;
 const PRODUCTS_COUNT = 20_000;
 const ORDERS_COUNT = 100_000;
 const ITEMS_IN_ORDER = 2;
-const CREATED_AT = '2025-01-01 00:00:00+00';
+const CREATED_AT_FROM = '2025-01-01 00:00:00+00';
 
 $pdo = connectToDatabase();
 
@@ -32,13 +32,15 @@ function connectToDatabase(): PDO
 function seedDatabase(PDO $pdo): void
 {
     mt_srand(42);
+    $createdAtTo = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:sP');
+
     $pdo->beginTransaction();
 
     try {
-        $userIds = seedUsers($pdo);
-        $products = seedProducts($pdo);
+        $userIds = seedUsers($pdo, $createdAtTo);
+        $products = seedProducts($pdo, $createdAtTo);
 
-        seedOrders($pdo, $userIds, $products);
+        seedOrders($pdo, $userIds, $products, $createdAtTo);
 
         $pdo->commit();
     } catch (Throwable $exception) {
@@ -53,7 +55,7 @@ function seedDatabase(PDO $pdo): void
 /**
  * @return list<int>
  */
-function seedUsers(PDO $pdo): array
+function seedUsers(PDO $pdo, string $createdAtTo): array
 {
     $insertUser = $pdo->prepare(
         'INSERT INTO users (email, name, created_at) VALUES (?, ?, ?) RETURNING id',
@@ -64,7 +66,7 @@ function seedUsers(PDO $pdo): array
         $insertUser->execute([
             "user{$number}@example.test",
             "User {$number}",
-            CREATED_AT,
+            randomCreatedAt(CREATED_AT_FROM, $createdAtTo),
         ]);
 
         $userIds[] = (int) $insertUser->fetchColumn();
@@ -78,7 +80,7 @@ function seedUsers(PDO $pdo): array
 /**
  * @return array{ids: list<int>, prices: array<int, float>}
  */
-function seedProducts(PDO $pdo): array
+function seedProducts(PDO $pdo, string $createdAtTo): array
 {
     $insertProduct = $pdo->prepare(
         'INSERT INTO products (sku, title, price, created_at) VALUES (?, ?, ?, ?) RETURNING id',
@@ -93,7 +95,7 @@ function seedProducts(PDO $pdo): array
             "SKU-{$number}",
             "Product {$number}",
             $price,
-            CREATED_AT,
+            randomCreatedAt(CREATED_AT_FROM, $createdAtTo),
         ]);
 
         $productId = (int) $insertProduct->fetchColumn();
@@ -116,7 +118,7 @@ function seedProducts(PDO $pdo): array
  *     prices: array<int, float>
  * } $products
  */
-function seedOrders(PDO $pdo, array $userIds, array $products): void
+function seedOrders(PDO $pdo, array $userIds, array $products, string $createdAtTo): void
 {
     $insertOrder = $pdo->prepare(
         'INSERT INTO orders (user_id, status, total_amount, created_at) VALUES (?, ?, ?, ?) RETURNING id',
@@ -135,13 +137,14 @@ function seedOrders(PDO $pdo, array $userIds, array $products): void
     for ($number = 1; $number <= ORDERS_COUNT; $number++) {
         $userId = $userIds[mt_rand(0, count($userIds) - 1)];
         $orderStatus = randomOrderStatus();
+        $createdAt = randomCreatedAt(CREATED_AT_FROM, $createdAtTo);
 
-        $insertOrder->execute([$userId, $orderStatus, '0.00', CREATED_AT]);
+        $insertOrder->execute([$userId, $orderStatus, '0.00', $createdAt]);
         $orderId = (int) $insertOrder->fetchColumn();
         $orderTotal = seedOrderItems($insertItem, $orderId, $products);
 
         $updateOrderTotal->execute([$orderTotal, $orderId]);
-        seedPayment($insertPayment, $orderId, $orderStatus, $providers);
+        seedPayment($insertPayment, $orderId, $orderStatus, $providers, $createdAt);
     }
 
     echo 'Orders created: ' . ORDERS_COUNT . PHP_EOL;
@@ -185,13 +188,28 @@ function seedPayment(
     int $orderId,
     string $orderStatus,
     array $providers,
+    string $createdAt,
 ): void {
     $insertPayment->execute([
         $orderId,
         paymentStatus($orderStatus),
         $providers[mt_rand(0, count($providers) - 1)],
-        CREATED_AT,
+        $createdAt,
     ]);
+}
+
+function randomCreatedAt(string $from, string $to): string
+{
+    $fromTimestamp = (new DateTimeImmutable($from))->getTimestamp();
+    $toTimestamp = (new DateTimeImmutable($to))->getTimestamp();
+
+    if ($fromTimestamp > $toTimestamp) {
+        throw new InvalidArgumentException('Created at start date must not be later than end date.');
+    }
+
+    $timestamp = mt_rand($fromTimestamp, $toTimestamp);
+
+    return (new DateTimeImmutable('@' . $timestamp))->format('Y-m-d H:i:sP');
 }
 
 function randomOrderStatus(): string
@@ -216,7 +234,15 @@ function paymentStatus(string $orderStatus): string
     }
 
     if ($orderStatus === 'new') {
-        return 'pending';
+        $rand = mt_rand(1, 100);
+
+        if ($rand <= 50) {
+            return 'paid';
+        } elseif ($rand <= 85) {
+            return 'failed';
+        } else {
+            return 'pending';
+        }
     }
 
     return mt_rand(1, 100) <= 75 ? 'failed' : 'pending';
