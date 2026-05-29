@@ -6,7 +6,7 @@ const USERS_COUNT = 50_000;
 const PRODUCTS_COUNT = 20_000;
 const ORDERS_COUNT = 100_000;
 const ITEMS_IN_ORDER = 2;
-const CREATED_AT_FROM = '2025-01-01 00:00:00+00';
+const CREATED_AT_FROM = '2026-05-01 00:00:00+00';
 
 $pdo = connectToDatabase();
 
