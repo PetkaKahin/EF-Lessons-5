@@ -1,7 +1,19 @@
 EXPLAIN ANALYSE
-SELECT  products.title, orders.created_at FROM order_items
-INNER JOIN orders ON order_items.order_id = orders.id
-INNER JOIN products ON order_items.product_id = products.id
-GROUP BY orders.created_at, products.title
-ORDER BY orders.created_at DESC
-LIMIT 100
+
+WITH last_orders AS (
+    SELECT id, user_id, status, total_amount, created_at
+    FROM orders
+    ORDER BY created_at DESC
+    LIMIT 100
+)
+SELECT last_orders.id AS order_id,
+    last_orders.status,
+    last_orders.total_amount,
+    products.title,
+    order_items.qty,
+    order_items.price,
+    last_orders.created_at
+FROM last_orders
+    INNER JOIN order_items ON order_items.order_id = last_orders.id
+    INNER JOIN products ON products.id = order_items.product_id
+ORDER BY last_orders.created_at DESC, last_orders.id, products.title;

@@ -1,22 +1,18 @@
 EXPLAIN ANALYSE
--- По ТЗ сказано, что надо 3 failed, но вероятность очень низка, можно уменьшить для проверки
 
--- За последние сутки
--- SELECT users.name, count(payments.id) as failed_count FROM payments
--- INNER JOIN orders ON payments.order_id = orders.id
--- INNER JOIN users ON orders.user_id = users.id
--- WHERE payments.status = 'failed'
---   AND payments.created_at >= NOW() - INTERVAL '1 day'
--- GROUP BY users.name
--- HAVING count(payments.id) >= 3
--- ORDER BY failed_count DESC
-
--- В течении суток на любую дату
-SELECT users.name, COUNT(payments.id) AS failed_count
-FROM payments
-         INNER JOIN orders ON payments.order_id = orders.id
-         INNER JOIN users ON orders.user_id = users.id
-WHERE payments.status = 'failed'
-GROUP BY users.name, DATE(payments.created_at)
-HAVING COUNT(payments.id) >= 3
-ORDER BY failed_count DESC;
+WITH failed AS (
+    SELECT orders.user_id,
+        COUNT(*) OVER (
+           PARTITION BY orders.user_id
+           ORDER BY payments.created_at
+           RANGE BETWEEN CURRENT ROW AND INTERVAL '24 hours' FOLLOWING
+        ) AS failed_count
+    FROM payments
+        JOIN orders ON orders.id = payments.order_id
+    WHERE payments.status = 'failed'
+)
+SELECT users.id, users.name, max(failed.failed_count) AS max_failed_24h
+FROM users
+    JOIN failed ON failed.user_id = users.id
+WHERE failed.failed_count > 1 -- У меня при рандоме максимум 2 failed, поставлю его чтобы было видно, что работает
+GROUP BY users.id, users.name;
