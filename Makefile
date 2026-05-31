@@ -1,4 +1,4 @@
-.PHONY: init up down shell dump-autoload migrate seed seed-rollback
+.PHONY: init up down shell dump-autoload migrate seed seed-rollback pay-order race-test
 
 init:
 	docker compose build
@@ -25,3 +25,9 @@ seed:
 
 seed-rollback:
 	docker compose exec php php seed/rollback.php
+
+pay-order:
+	docker compose exec php php bin/pay_order.php $(ORDER)
+
+race-test:
+	docker compose exec php php bin/race_test.php
