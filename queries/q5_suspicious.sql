@@ -14,5 +14,6 @@ WITH failed AS (
 SELECT users.id, users.name, max(failed.failed_count) AS max_failed_24h
 FROM users
     JOIN failed ON failed.user_id = users.id
-WHERE failed.failed_count > 1 -- У меня при рандоме максимум 2 failed, поставлю его чтобы было видно, что работает
-GROUP BY users.id, users.name;
+WHERE failed.failed_count > 2 -- У меня при рандоме максимум 3 failed, поставлю его чтобы было видно, что работает
+GROUP BY users.id, users.name
+ORDER BY max_failed_24h DESC;

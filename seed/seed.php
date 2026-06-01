@@ -7,6 +7,7 @@ const PRODUCTS_COUNT = 20_000;
 const ORDERS_COUNT = 100_000;
 const ITEMS_IN_ORDER = 2;
 const CREATED_AT_FROM = '2026-05-01 00:00:00+00';
+const CREATED_AT_TO = '2026-06-01 00:00:00+00';
 
 $pdo = connectToDatabase();
 
@@ -32,15 +33,14 @@ function connectToDatabase(): PDO
 function seedDatabase(PDO $pdo): void
 {
     mt_srand(42);
-    $createdAtTo = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:sP');
 
     $pdo->beginTransaction();
 
     try {
-        $userIds = seedUsers($pdo, $createdAtTo);
-        $products = seedProducts($pdo, $createdAtTo);
+        $userIds = seedUsers($pdo);
+        $products = seedProducts($pdo);
 
-        seedOrders($pdo, $userIds, $products, $createdAtTo);
+        seedOrders($pdo, $userIds, $products);
 
         $pdo->commit();
     } catch (Throwable $exception) {
@@ -55,7 +55,7 @@ function seedDatabase(PDO $pdo): void
 /**
  * @return list<int>
  */
-function seedUsers(PDO $pdo, string $createdAtTo): array
+function seedUsers(PDO $pdo): array
 {
     $insertUser = $pdo->prepare(
         'INSERT INTO users (email, name, created_at) VALUES (?, ?, ?) RETURNING id',
@@ -66,7 +66,7 @@ function seedUsers(PDO $pdo, string $createdAtTo): array
         $insertUser->execute([
             "user{$number}@example.test",
             "User {$number}",
-            randomCreatedAt(CREATED_AT_FROM, $createdAtTo),
+            randomCreatedAt(CREATED_AT_FROM, CREATED_AT_TO),
         ]);
 
         $userIds[] = (int) $insertUser->fetchColumn();
@@ -80,7 +80,7 @@ function seedUsers(PDO $pdo, string $createdAtTo): array
 /**
  * @return array{ids: list<int>, prices: array<int, float>}
  */
-function seedProducts(PDO $pdo, string $createdAtTo): array
+function seedProducts(PDO $pdo): array
 {
     $insertProduct = $pdo->prepare(
         'INSERT INTO products (sku, title, price, created_at) VALUES (?, ?, ?, ?) RETURNING id',
@@ -95,7 +95,7 @@ function seedProducts(PDO $pdo, string $createdAtTo): array
             "SKU-{$number}",
             "Product {$number}",
             $price,
-            randomCreatedAt(CREATED_AT_FROM, $createdAtTo),
+            randomCreatedAt(CREATED_AT_FROM, CREATED_AT_TO),
         ]);
 
         $productId = (int) $insertProduct->fetchColumn();
@@ -118,7 +118,7 @@ function seedProducts(PDO $pdo, string $createdAtTo): array
  *     prices: array<int, float>
  * } $products
  */
-function seedOrders(PDO $pdo, array $userIds, array $products, string $createdAtTo): void
+function seedOrders(PDO $pdo, array $userIds, array $products): void
 {
     $insertOrder = $pdo->prepare(
         'INSERT INTO orders (user_id, status, total_amount, created_at) VALUES (?, ?, ?, ?) RETURNING id',
@@ -137,7 +137,7 @@ function seedOrders(PDO $pdo, array $userIds, array $products, string $createdAt
     for ($number = 1; $number <= ORDERS_COUNT; $number++) {
         $userId = $userIds[mt_rand(0, count($userIds) - 1)];
         $orderStatus = randomOrderStatus();
-        $createdAt = randomCreatedAt(CREATED_AT_FROM, $createdAtTo);
+        $createdAt = randomCreatedAt(CREATED_AT_FROM, CREATED_AT_TO);
 
         $insertOrder->execute([$userId, $orderStatus, '0.00', $createdAt]);
         $orderId = (int) $insertOrder->fetchColumn();
