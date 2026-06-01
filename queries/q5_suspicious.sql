@@ -1,4 +1,4 @@
-EXPLAIN ANALYSE
+EXPLAIN ANALYZE
 
 WITH failed AS (
     SELECT orders.user_id,

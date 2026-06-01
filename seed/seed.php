@@ -236,13 +236,11 @@ function paymentStatus(string $orderStatus): string
     if ($orderStatus === 'new') {
         $rand = mt_rand(1, 100);
 
-        if ($rand <= 50) {
-            return 'paid';
-        } elseif ($rand <= 85) {
+        if ($rand <= 70) {
             return 'failed';
-        } else {
-            return 'pending';
         }
+
+        return 'pending';
     }
 
     return mt_rand(1, 100) <= 75 ? 'failed' : 'pending';

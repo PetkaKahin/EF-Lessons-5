@@ -1,4 +1,4 @@
-EXPLAIN ANALYSE
+EXPLAIN ANALYZE
 
 SELECT
     count(*) AS total_orders,

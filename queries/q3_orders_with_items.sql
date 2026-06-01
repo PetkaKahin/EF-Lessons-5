@@ -1,4 +1,4 @@
-EXPLAIN ANALYSE
+EXPLAIN ANALYZE
 
 WITH last_orders AS (
     SELECT id, user_id, status, total_amount, created_at
