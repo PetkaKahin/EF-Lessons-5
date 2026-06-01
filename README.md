@@ -20,3 +20,12 @@ make pay-order ORDER=123   # оплатить заказ с id=123
 ```bash
 make race-test
 ```
+
+## Пагинация
+
+```bash
+make offset-pagination
+```
+```bash
+keyset-pagination
+```
